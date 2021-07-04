@@ -41,7 +41,7 @@ parser.add_argument("-f", "--framerate", type=int, default=1)
 parser.add_argument("-p", "--profile", default=config["profile"], help="Google Chrome profile directory")
 parser.add_argument("-o", "--output", default=config["dir"], help="Directory where images will be saved")
 parser.add_argument("-I", "--images-only", action="store_true", help="Output only images. Do not encode to a video")
-parser.add_argument("url")
+parser.add_argument("url", help="URL of the first map to save")
 arguments = parser.parse_args()
 arguments.ffmpeg_arguments = config["ffmpeg_arguments"]
 arguments.ffmpeg_override_arguments = config["ffmpeg_override_arguments"]

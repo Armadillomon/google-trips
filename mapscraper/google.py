@@ -24,7 +24,7 @@ class DateCaption:
 		self.stroke_fill = (0, 0, 0)
 
 	def add_to_img(self, image, special=True):
-		caption = self.date.strftime(self.__class__.DATE_FORMAT)
+		caption = self.date.strftime(self.DATE_FORMAT)
 		draw = ImageDraw.Draw(image)
 		self._date_bbox = draw.textbbox((self.padding, image.size[1] - self.padding), caption, self.font, "ls", stroke_width=self.stroke_width)
 		draw.text((self.padding, image.size[1] - self.padding), caption, self.fill, self.font, "ls", stroke_width=self.stroke_width, stroke_fill=self.stroke_fill)
@@ -101,16 +101,16 @@ class MapControls:
 		self.overlay = []
 		self._display = []
 		self._initialize_controls(
-			("zoomin", self.__class__.ZOOMIN_SELECTOR),
-			("zoomout", self.__class__.ZOOMOUT_SELECTOR),
-			("toggle_map", self.__class__.MAP_SELECTOR),
-			("toggle_satellite", self.__class__.SATELLITE_SELECTOR)
+			("zoomin", self.ZOOMIN_SELECTOR),
+			("zoomout", self.ZOOMOUT_SELECTOR),
+			("toggle_map", self.MAP_SELECTOR),
+			("toggle_satellite", self.SATELLITE_SELECTOR)
 		)
 		self._initialize_overlay(
-			self.__class__.GOOGLE_ACCOUNT_SETTINGS,
-			self.__class__.GOOGLE_MAP_SETTINGS,
-			self.__class__.GOOGLE_ZOOM,
-			self.__class__.GOOGLE_LAYER
+			self.GOOGLE_ACCOUNT_SETTINGS,
+			self.GOOGLE_MAP_SETTINGS,
+			self.GOOGLE_ZOOM,
+			self.GOOGLE_LAYER
 		)
 
 	def _initialize_controls(self, *controls):
@@ -176,11 +176,11 @@ class MapPage:
 
 	@property
 	def frame_width(self):
-		return self._driver.find_element_by_css_selector(self.__class__.FRAME_SELECTOR).size["width"]
+		return self._driver.find_element_by_css_selector(self.FRAME_SELECTOR).size["width"]
 
 	@property
 	def frame_height(self):
-		return self._driver.find_element_by_css_selector(self.__class__.FRAME_SELECTOR).size["height"]
+		return self._driver.find_element_by_css_selector(self.FRAME_SELECTOR).size["height"]
 
 	def resize_window(self, map_width, map_height):
 		window_size = self._driver.get_window_size()
@@ -191,7 +191,7 @@ class MapPage:
 		target_height = map_height + correction[1]
 		if target_width > screen.width or target_height > screen.height: raise RuntimeError("Window cannot be larger than screen resolution")
 		self._driver.set_window_size(target_width, target_height)
-		canvas = self._driver.find_element_by_css_selector(self.__class__.MAP_SELECTOR)
+		canvas = self._driver.find_element_by_css_selector(self.MAP_SELECTOR)
 		diff_width = map_width - canvas.size["width"]
 		diff_height = map_height - canvas.size["height"]
 		if diff_width or diff_height:
@@ -207,17 +207,17 @@ class MapPage:
 			canvas.style.width = arguments[1] + "px";
 			canvas.style.height = arguments[2] + "px";
 			callback();
-		""", self.__class__.MAP_CLASS, str(map_width), str(map_height))
+		""", self.MAP_CLASS, str(map_width), str(map_height))
 		self.controls = MapControls(self._driver)
 
 	def next_map(self):
-		next_day = self._wait.until(expected_conditions.element_to_be_clickable((webdriver.common.by.By.CSS_SELECTOR, self.__class__.NEXT_SELECTOR)))
+		next_day = self._wait.until(expected_conditions.element_to_be_clickable((webdriver.common.by.By.CSS_SELECTOR, self.NEXT_SELECTOR)))
 		next_day.click()
 
 	def save_map(self, filename):
-		canvas = self._driver.find_element_by_css_selector(self.__class__.MAP_SELECTOR)
+		canvas = self._driver.find_element_by_css_selector(self.MAP_SELECTOR)
 		map = GoogleMap.from_bytes(canvas.screenshot_as_png)
-		map.date = GoogleDateParser.parse(self._driver.find_element_by_css_selector(self.__class__.DATE_SELECTOR).text)
+		map.date = GoogleDateParser.parse(self._driver.find_element_by_css_selector(self.DATE_SELECTOR).text)
 		map.add_captions()
 		if os.path.isdir(filename): filename = os.path.join(filename, f"{map.date.strftime('%Y%m%d')}.png")
 		map.save(filename)

@@ -7,40 +7,8 @@ import os
 from selenium import webdriver
 from selenium.webdriver.support import expected_conditions
 from PIL import Image
-from PIL import ImageDraw
-from PIL import ImageFont
 import mapscraper.metrics
-
-class DateCaption:
-	DATE_FORMAT = "%Y-%m-%d"
-
-	def __init__(self, date):
-		self.date = date
-		self.font_size = 64
-		self.font = ImageFont.truetype(r"C:\Windows\Fonts\micross.ttf", self.font_size)
-		self.padding = 48
-		self.fill = (255, 255, 255)
-		self.stroke_width = 2
-		self.stroke_fill = (0, 0, 0)
-
-	def add_to_img(self, image, special=True):
-		caption = self.date.strftime(self.DATE_FORMAT)
-		draw = ImageDraw.Draw(image)
-		self._date_bbox = draw.textbbox((self.padding, image.size[1] - self.padding), caption, self.font, "ls", stroke_width=self.stroke_width)
-		draw.text((self.padding, image.size[1] - self.padding), caption, self.fill, self.font, "ls", stroke_width=self.stroke_width, stroke_fill=self.stroke_fill)
-		if special: self._handle_special_dates(image)
-
-	def _handle_special_dates(self, image):
-		emojis = { "boom": "\U0001F4A5", "plane": "\u2708", "dress": "\U0001F457", "luggage": "\U0001F9F3", "broken": "\U0001F494" }
-		emoji_files = { "plane": "2708-fe0f.png", "dress": "1f457.png", "luggage": "1f9f3.png", "broken": "1f494.png" }
-		special_dates = { datetime.date(2021, 1, 9): emoji_files["plane"], datetime.date(2021, 1, 24): emoji_files["dress"], datetime.date(2021, 4, 19): emoji_files["luggage"], datetime.date(2021, 4, 28): emoji_files["broken"] }
-		if self.date in special_dates:
-			icon = Image.open(os.path.join(os.getcwd(), "emoji", special_dates[self.date]))
-			image.alpha_composite(icon, (self._date_bbox[2], self._align(icon)[1]))
-			icon.close()
-
-	def _align(self, image):
-		return (self._date_bbox[2], (self._date_bbox[1] + self._date_bbox[3] - image.size[1])//2)
+from .captions import *
 
 class GoogleDateParser:
 	PATTERN = r"(\w+),\s+(\d{1,2})\s+(\w+)\s+(\d+)"
@@ -52,8 +20,7 @@ class GoogleDateParser:
 
 	@classmethod
 	def parse(cls, string):
-		string = string.upper()
-		result = re.match(cls.PATTERN, string)
+		result = re.match(cls.PATTERN, string.upper())
 		if result:
 			weekday = cls.WEEKDAYS[result[1]]
 			day = int(result[2])
@@ -74,11 +41,27 @@ class GoogleMap:
 		map.size = map.image.size
 		return map
 
-	def add_captions(self):
-		caption = DateCaption(self.date)
-		caption.add_to_img(self.image)
+	def add_date_caption(self, font, size, padding):
+		self._date_caption = DateCaption(self.date, font, size, padding)
+		self._date_caption.add_to_img(self.image)
+	
+	def add_annotation(self, type: str, annotation: str or os.PathLike, **kwargs):
+		if type == "text":
+			font = kwargs["font"]
+			size = kwargs["size"]
+			padding = size
+			caption = Caption(annotation, font, size, padding)
+			caption.add_to_img(self.image, (self._date_caption.position[0] + self._date_caption.length, self._date_caption.position[1]))
+		elif type == "icon":
+			symbol = AnnotationSymbol(annotation)
+			symbol.add_to_img(self.image, self._align_symbol(symbol))
+		else: raise ArgumentError("Invalid annotation type")
+
+	def _align_symbol(self, symbol: AnnotationSymbol):
+		return (self._date_caption.bbox[2], (self._date_caption.bbox[1] + self._date_caption.bbox[3] - symbol.size[1])//2)
 
 	def save(self, filename):
+		if os.path.isdir(filename): filename = os.path.join(filename, f"{map.date.strftime('%Y%m%d')}.png")
 		self.image.save(filename)
 
 	def close(self):
@@ -116,7 +99,7 @@ class MapControls:
 	def _initialize_controls(self, *controls):
 		for control in controls:
 			self._wait.until(expected_conditions.visibility_of_element_located((webdriver.common.by.By.CSS_SELECTOR, control[1])))
-			self.controls[control[0]] = self._driver.find_element_by_css_selector(control[1])
+			self.controls[control[0]] = control[1]
 
 	def _initialize_overlay(self, *selectors):
 		for selector in selectors:
@@ -214,11 +197,10 @@ class MapPage:
 		next_day = self._wait.until(expected_conditions.element_to_be_clickable((webdriver.common.by.By.CSS_SELECTOR, self.NEXT_SELECTOR)))
 		next_day.click()
 
-	def save_map(self, filename):
+	@property
+	def map(self):
 		canvas = self._driver.find_element_by_css_selector(self.MAP_SELECTOR)
 		map = GoogleMap.from_bytes(canvas.screenshot_as_png)
 		map.date = GoogleDateParser.parse(self._driver.find_element_by_css_selector(self.DATE_SELECTOR).text)
-		map.add_captions()
-		if os.path.isdir(filename): filename = os.path.join(filename, f"{map.date.strftime('%Y%m%d')}.png")
-		map.save(filename)
-		map.close()
+		return map
+

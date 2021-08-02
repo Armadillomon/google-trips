@@ -133,3 +133,6 @@ dmypy.json
 
 # configuration files
 config.json
+
+# output files
+maps/

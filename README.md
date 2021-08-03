@@ -7,6 +7,7 @@ Save your Google Maps Timeline to PNG files or make a time-lapse video out of th
 - [ffmpeg](https://ffmpeg.org/download.html) installed and added to PATH
 
 **Usage:**
+```
 trips.py [-h] -n NUMBER [-b BEGIN] -s SIZE [-f FRAMERATE] [-p PROFILE] [-o OUTPUT] [-w] [-I] url
 
 positional arguments:
@@ -26,6 +27,7 @@ optional arguments:
                         Directory where images are saved
   -w, --wait            Wait for user input before starting
   -I, --images-only     Output only images. Do not encode to a video
+```
 
-**Example:**
-trips.py -n 30 -s 800x800 -f 2 https://timeline.google.com/maps/timeline?hl=pl&authuser=(...)&pb=!1m2!1m1!1s2021-06-01
+**Example:**  
+`trips.py -n 30 -s 800x800 -f 2 https://timeline.google.com/maps/timeline?hl=pl&authuser=(...)&pb=!1m2!1m1!1s2021-06-01`
